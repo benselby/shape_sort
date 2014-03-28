@@ -39,8 +39,6 @@ int main( int argsc, char** argsv )
     // Find all the contours in the summed image and then fill them
     Mat filled_img = Mat::zeros(img.rows, img.cols, CV_8UC3);
     vector<vector<Point> > contours;
-    vector<Point> contour;
-    vector<Point> poly_approx;
     vector<Vec4i> hierarchy;
     double min_area = 10.0;
     
@@ -54,18 +52,30 @@ int main( int argsc, char** argsv )
             continue;
 
         drawContours(filled_img, contours, i, CV_RGB(255, 255, 255), CV_FILLED, 8, hierarchy, 0);
-        
-        contour = contours[i];
-        approxPolyDP( contour, poly_approx, 1, true); 
+    }
+  
+    cout<<"Finding edges of segmented shapes..."<<endl;
+    vector<vector<Point> > filled_contours;
+    vector<Vec4i> filled_hierarchy;
+    vector<Point> poly_approx;
+    Mat filled_grey;
+    cvtColor(filled_img, filled_grey, CV_BGR2GRAY);
+    findContours(filled_grey, filled_contours, filled_hierarchy, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
+    cout<<"No. of identified contours: "<<filled_contours.size()<<endl; 
+    for (size_t i = 0; i < filled_contours.size(); i++)
+    {
+        approxPolyDP( filled_contours[i], poly_approx, 1, true); 
         // draw lines connecting each of the vertices
         cout<<"Size of polygon: "<<poly_approx.size()<<endl;        
+        
+        Scalar colour( rand()%255, rand()%255, rand()%255 );
+
         for ( size_t j = 0; j<poly_approx.size()-1; j++ )
         {
-            line( filled_img, poly_approx.at(j), poly_approx.at(j+1), Scalar(255,0,0), 2);
+            line( filled_img, poly_approx.at(j), poly_approx.at(j+1), colour, 2);
         }
 
-            line( filled_img, poly_approx.at(poly_approx.size()-1), poly_approx.at(0), Scalar(255,0,0), 2);
-//        getOrientation(contours[i], filled_img);   
+        line( filled_img, poly_approx.at(poly_approx.size()-1), poly_approx.at(0), colour, 2);
         imshow("partial", filled_img);
         waitKey(0);
     }
