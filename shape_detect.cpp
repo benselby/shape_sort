@@ -83,10 +83,10 @@ int main( int argsc, char** argsv )
         
         // Find the midpoint of any one side and return the angle between that
         // point and the centroid - this is the grasping angle
-        int mid_x = poly_approx.at(0).x - poly_approx.at(1).x;
-        int mid_y = poly_approx.at(0).y - poly_approx.at(1).y;
+        int mid_x = (poly_approx.at(0).x + poly_approx.at(1).x)/2;
+        int mid_y = (poly_approx.at(0).y + poly_approx.at(1).y)/2;
         Point midpoint = Point(mid_x, mid_y);
-        line(filled_img, centroid, midpoint, Scalar(0,255,0) );
+        line(filled_img, centroid, midpoint, Scalar(0,255,0),2 );
 
         //imshow("partial", filled_img);
         //waitKey(0);
