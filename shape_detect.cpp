@@ -5,7 +5,7 @@
 using namespace std;
 using namespace cv;
 
-double getOrientation(vector<Point> &pts, Mat &img);
+Point get_centroid( vector<Point> &pts, Mat &img );
 
 int main( int argsc, char** argsv )
 {
@@ -42,6 +42,7 @@ int main( int argsc, char** argsv )
     vector<Vec4i> hierarchy;
     double min_area = 10.0;
     
+    cout<<"Filling holes in the segemented shapes..."<<endl;
     findContours(sum.clone(), contours, hierarchy, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
     cout<<"No. of identified contours: "<<contours.size()<<endl; 
     for (size_t i = 0; i < contours.size(); i++)
@@ -58,13 +59,14 @@ int main( int argsc, char** argsv )
     vector<vector<Point> > filled_contours;
     vector<Vec4i> filled_hierarchy;
     vector<Point> poly_approx;
+    // Create a single channel version of the filled image to find contours
     Mat filled_grey;
     cvtColor(filled_img, filled_grey, CV_BGR2GRAY);
     findContours(filled_grey, filled_contours, filled_hierarchy, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
     cout<<"No. of identified contours: "<<filled_contours.size()<<endl; 
     for (size_t i = 0; i < filled_contours.size(); i++)
     {
-        approxPolyDP( filled_contours[i], poly_approx, 1, true); 
+        approxPolyDP( filled_contours[i], poly_approx, 2, true); 
         // draw lines connecting each of the vertices
         cout<<"Size of polygon: "<<poly_approx.size()<<endl;        
         
@@ -76,8 +78,18 @@ int main( int argsc, char** argsv )
         }
 
         line( filled_img, poly_approx.at(poly_approx.size()-1), poly_approx.at(0), colour, 2);
-        imshow("partial", filled_img);
-        waitKey(0);
+        
+        Point centroid = get_centroid( filled_contours[i], filled_img );
+        
+        // Find the midpoint of any one side and return the angle between that
+        // point and the centroid - this is the grasping angle
+        int mid_x = poly_approx.at(0).x - poly_approx.at(1).x;
+        int mid_y = poly_approx.at(0).y - poly_approx.at(1).y;
+        Point midpoint = Point(mid_x, mid_y);
+        line(filled_img, centroid, midpoint, Scalar(0,255,0) );
+
+        //imshow("partial", filled_img);
+        //waitKey(0);
     }
 
     // Display the images:
@@ -93,38 +105,24 @@ int main( int argsc, char** argsv )
     return 0;
 }
 
-double getOrientation(vector<Point> &pts, Mat &img)
+/*
+*   Finds the centroid as a uniform sum of all the pixels in a given
+*   blob. Draws the centre on the specified image.
+*/
+Point get_centroid(vector<Point> &pts, Mat &img)
 {
-    //Construct a buffer used by the pca analysis
-    Mat data_pts = Mat(pts.size(), 2, CV_64FC1);
-    for (int i = 0; i < data_pts.rows; ++i)
+    int x_sum = 0;
+    int y_sum = 0;
+    
+    for (size_t i = 0; i < pts.size(); i++ )
     {
-        data_pts.at<double>(i, 0) = pts[i].x;
-        data_pts.at<double>(i, 1) = pts[i].y;
-    }
- 
-    //Perform PCA analysis
-    PCA pca_analysis(data_pts, Mat(), CV_PCA_DATA_AS_ROW);
- 
-    //Store the position of the object
-    Point pos = Point(pca_analysis.mean.at<double>(0, 0),
-                      pca_analysis.mean.at<double>(0, 1));
- 
-    //Store the eigenvalues and eigenvectors
-    vector<Point2d> eigen_vecs(2);
-    vector<double> eigen_val(2);
-    for (int i = 0; i < 2; ++i)
-    {
-        eigen_vecs[i] = Point2d(pca_analysis.eigenvectors.at<double>(i, 0),
-                                pca_analysis.eigenvectors.at<double>(i, 1));
- 
-        eigen_val[i] = pca_analysis.eigenvalues.at<double>(0, i);
-    }
- 
-    // Draw the principal components
-    circle(img, pos, 3, CV_RGB(255, 0, 255), 2);
-    line(img, pos, pos + 0.02 * Point(eigen_vecs[0].x * eigen_val[0], eigen_vecs[0].y * eigen_val[0]) , CV_RGB(255, 255, 0));
-    line(img, pos, pos + 0.02 * Point(eigen_vecs[1].x * eigen_val[1], eigen_vecs[1].y * eigen_val[1]) , CV_RGB(0, 255, 255));
- 
-    return atan2(eigen_vecs[0].y, eigen_vecs[0].x);
+        x_sum += pts.at(i).x;
+        y_sum += pts.at(i).y;
+    }   
+
+    Point centroid = Point( x_sum/pts.size(), y_sum/pts.size() );
+                           
+    // Draw the centroid on the image
+    circle( img, centroid, 3, Scalar(255,0,255), 2 );
+    return centroid;
 }
