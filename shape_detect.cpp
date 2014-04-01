@@ -10,8 +10,8 @@ Point get_centroid( vector<Point> &pts, Mat &img );
 int main( int argsc, char** argsv )
 {
     cout<<"Segmenting the input image based on colour to resolve the blocks"<<endl;
-    Mat img = imread("sample-imgs/basic_img.png");
-//    Mat img = imread("sample-imgs/test-img1.png");
+//    Mat img = imread("sample-imgs/basic_img.png");
+    Mat img = imread("sample-imgs/test-img1.png");
     // Convert the image into HSV format for convenient colour segmentation
     Mat img_hsv;
     cvtColor( img, img_hsv, CV_BGR2HSV );
@@ -30,6 +30,29 @@ int main( int argsc, char** argsv )
     lower_range = Scalar(210./2, 0.35*255, 0.55*255);
     upper_range = Scalar(220./2, 0.55*255, 0.71*255);
     inRange( img_hsv, lower_range, upper_range, octagon); 
+    
+    Mat s_slot, t_slot, o_slot, tmp_slot;
+    lower_range = Scalar(340./2, 0.30*255, 0.35*255);
+    upper_range = Scalar(359./2, 0.74*255, 0.55*255);
+    inRange( img_hsv, lower_range, upper_range, s_slot); 
+    
+    lower_range = Scalar(0./2, 0.30*255, 0.35*255);
+    upper_range = Scalar(4./2, 0.74*255, 0.55*255);
+    inRange( img_hsv, lower_range, upper_range, tmp_slot); 
+    add(s_slot, tmp_slot, s_slot);
+    
+    lower_range = Scalar(140./2, 0.2*255, 0.10*255);
+    upper_range = Scalar(190./2, 0.4*255, 0.3*255);
+    inRange( img_hsv, lower_range, upper_range, t_slot); 
+    
+    lower_range = Scalar(230./2, 0.33*255, 0.30*255);
+    upper_range = Scalar(260./2, 0.56*255, 0.5*255);
+    inRange( img_hsv, lower_range, upper_range, o_slot); 
+    
+    Mat slot_sum;
+    add(s_slot, t_slot, slot_sum);
+    add(slot_sum, o_slot, slot_sum);
+    imshow("Slots", slot_sum);
     
     // Sum the images into one
     Mat sum;
