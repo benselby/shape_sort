@@ -184,7 +184,7 @@ vector<Point> get_shape_points(int argc, char* argv) {
 			line(sum, poly_approx.at(j), poly_approx.at(j + 1), colour, 2);
 		}
 
-		line(sum, poly_approx.at(poly_approx.size() - 1), poly_approx.at(0), colour, 2);
+        line(sum, poly_approx.at(poly_approx.size() - 1), poly_approx.at(0), colour, 2);
 
 		Point centroid = get_centroid(filled_contours[i], sum);
 
@@ -194,9 +194,12 @@ vector<Point> get_shape_points(int argc, char* argv) {
 		int mid_y = (poly_approx.at(0).y + poly_approx.at(1).y) / 2;
 		Point midpoint = Point(mid_x, mid_y);
 		line(sum, centroid, midpoint, Scalar(0, 255, 0), 2);
-		result_points.at(2*i) = centroid;
-		result_points.at(2*i+1) = midpoint;
-		//imshow("partial", filled_img);
+		
+        cout<<"Adding points to the vector, yo"<<endl;
+		result_points.push_back(centroid);
+        result_points.push_back(midpoint);
+        
+        //imshow("partial", filled_img);
 		//waitKey(0);
 	}
 	imshow("Filled Holes", sum);
