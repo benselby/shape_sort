@@ -82,7 +82,7 @@ Point get_centroid(vector<Point> &pts, Mat &img)
 	Point centroid = Point(x_sum / pts.size(), y_sum / pts.size());
 
 	// Draw the centroid on the image
-	circle(img, centroid, 3, Scalar(255, 0, 255), 2);
+	//circle(img, centroid, 3, Scalar(255, 0, 255), 2);
 	return centroid;
 }
 
@@ -90,7 +90,7 @@ vector<Point> get_shape_points(int argc, char* argv) {
 	Mat src;
 	Mat clustered;
 	Mat temp, temp2;
-	vector<Point> result_points;
+	vector<Point> result_points(12, Point(0,0));
 	//src = imread("D:/School/Yr4T2/ME547/Screenshot from 2014-03-31 15_29_18.png");
 	src = imread(argv, 1);
 
@@ -169,12 +169,20 @@ vector<Point> get_shape_points(int argc, char* argv) {
 	cout << "No. of identified contours: " << filled_contours.size() << endl;
 	for (size_t i = 0; i < filled_contours.size(); i++)
 	{
-		area2 = contourArea(filled_contours[i]);
+		bool is_block = false;
+
+        area2 = contourArea(filled_contours[i]);
 		if (area2 > 3000)
 			continue;
 
-		approxPolyDP(filled_contours[i], poly_approx, 7, true);
+		approxPolyDP(filled_contours[i], poly_approx, 5, true);
 		// draw lines connecting each of the vertices
+        
+        if ( poly_approx.size() < 8 )
+        {
+            cout<< "Polygon is ambiguous, recalculating with a larger face size!"<<endl;
+            approxPolyDP(filled_contours[i], poly_approx, 10, true);
+        }
 		cout << "Size of polygon: " << poly_approx.size() << endl;
 
 		Scalar colour(rand() % 255, rand() % 255, rand() % 255);
@@ -183,10 +191,20 @@ vector<Point> get_shape_points(int argc, char* argv) {
 		{
 			line(sum, poly_approx.at(j), poly_approx.at(j + 1), colour, 2);
 		}
-
+        
         line(sum, poly_approx.at(poly_approx.size() - 1), poly_approx.at(0), colour, 2);
 
 		Point centroid = get_centroid(filled_contours[i], sum);
+        
+        Vec3b pixel = sum.at<Vec3b>(centroid.y, centroid.x);
+        int b = pixel[0];
+        int g = pixel[1];
+        int r = pixel[2];
+        
+        cout<<b<<" "<<g<<" "<<r<<" "<<endl;
+        
+        if (b==255)
+            is_block = true;
 
 		// Find the midpoint of any one side and return the angle between that
 		// point and the centroid - this is the grasping angle        
@@ -194,11 +212,44 @@ vector<Point> get_shape_points(int argc, char* argv) {
 		int mid_y = (poly_approx.at(0).y + poly_approx.at(1).y) / 2;
 		Point midpoint = Point(mid_x, mid_y);
 		line(sum, centroid, midpoint, Scalar(0, 255, 0), 2);
-		
-        cout<<"Adding points to the vector, yo"<<endl;
-		result_points.push_back(centroid);
-        result_points.push_back(midpoint);
-        
+	    
+        if ( poly_approx.size() == 3 )
+        {
+           if (is_block) {
+               result_points.at(0) = centroid;
+               result_points.at(1) = midpoint;
+           }
+           else {
+               result_points.at(2) = centroid;
+               result_points.at(3) = midpoint;
+           }
+        }
+        else if ( poly_approx.size() == 4 )
+        {
+           if (is_block) {
+               result_points.at(4) = centroid;
+               result_points.at(5) = midpoint;
+           }
+           else {
+               result_points.at(6) = centroid;
+               result_points.at(7) = midpoint;
+           }
+               
+
+        }
+        else
+        {
+           if (is_block) {
+               result_points.at(8) = centroid;
+               result_points.at(9) = midpoint;
+           }
+           else {
+               result_points.at(10) = centroid;
+               result_points.at(11) = midpoint;
+           }
+            
+        }
+       
         //imshow("partial", filled_img);
 		//waitKey(0);
 	}
